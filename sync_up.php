@@ -54,7 +54,7 @@ function suap_sync_course($categoryid, $json){
         $data = (object) [
             "category"=>$categoryid,
             "fullname"=>$json->componente->descricao,
-            "shortname"=>$json->componente->descricao,
+            "shortname"=>$diario_code,
             "idnumber"=>$diario_code,
             "visible"=>1,
             "enablecompletion"=>1,
