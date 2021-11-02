@@ -27,21 +27,38 @@ function suap_sync_authenticate() {
 }
 
 
-function suap_sync_category($curso){
-    global $DB, $CFG;
+function suap_sync_get_or_create_category($idnumber, $name, $parent){
+    global $DB;
 
-    $root_category_idnumber = 'diarios';
-
-    $course_category = $DB->get_record('course_categories', ['idnumber'=>$curso->codigo]);
+    $course_category = $DB->get_record('course_categories', ['idnumber'=>$idnumber]);
     if (empty($course_category)) {
-        $diarios_category = $DB->get_record('course_categories', ['idnumber'=>$root_category_idnumber]);
-        if (empty($diarios_category)) {
-            $diarios_category = \core_course_category::create(['name'=>'Diários', 'idnumber'=>$root_category_idnumber]);
-        }
-        $course_category = \core_course_category::create(['name'=>$curso->nome, 'idnumber'=>$curso->codigo, 'parent'=>$diarios_category->id]);
+        $course_category = \core_course_category::create(['name'=>$name, 'idnumber'=>$idnumber, $parent]);
     }
 
     return $course_category->id;
+}
+
+
+function suap_sync_get_or_create_category_hierarchy($data) {
+    $diarios = suap_sync_get_or_create_category(
+        get_config('auth_suap', 'category_diarios_idnumber') ?: 'diarios', 
+        get_config('auth_suap', 'category_diarios_name') ?: 'Diários', 
+        get_config('auth_suap', 'category_diarios_parent') ?: 0
+    );
+
+    $curso = suap_sync_get_or_create_category(
+        $data->curso->codigo, 
+        $data->curso->nome, 
+        $diarios->id
+    );
+
+    $ano_periodo = substr($data->turma->codigo, 0, 4) . "." . substr($data->turma->codigo, 4, 1);
+    $semestre = suap_sync_get_or_create_category(
+        "{$data->curso->codigo}.{$ano_periodo}",
+        $ano_periodo, 
+        $curso->id
+    );
+    return $semestre->id;
 }
 
 
@@ -228,36 +245,39 @@ function get_enrolment_config($courseid, $type) {
 
 
 function suap_sync_up() {
-    global $DB, $CFG;
+    global $CFG;
 
-    suap_sync_authenticate();
+    try { 
+        suap_sync_authenticate();
 
-    $entityBody = file_get_contents('php://input');
-    # $json = json_decode(file_get_contents('sample.json'));
-    $json = json_decode(file_get_contents('php://input'));
-
-    $categoryid = suap_sync_category($json->curso);
-    $courseid = suap_sync_course($categoryid, $json);
-    $context = context_course::instance($courseid);
-
-    $issuerid = sync_suap_issuer();
-
-    $principal_config = get_enrolment_config($courseid, 'principal');
-    $moderador_config = get_enrolment_config($courseid, 'moderador');
-    foreach ($json->professores as $professor) {
-        $userid = suap_sync_user($professor, $issuerid);
-        $conf = $professor->tipo == 'Principal' || $professor->tipo == 'Formador' ? $principal_config : $moderador_config;
-        suap_sync_enrol($context->id, $userid, $conf->enrolid, $conf->roleid);
-    }
-
-    $aluno_config = get_enrolment_config($courseid, 'aluno');
-    foreach ($json->alunos as $aluno) {
-        $userid = suap_sync_user($aluno, $issuerid);
-        suap_sync_enrol($context->id, $userid, $aluno_config->enrolid, $aluno_config->roleid);
-        suap_sync_group($courseid, $userid, $aluno->polo);
-    }
+        # $json = json_decode(file_get_contents('sample.json'));
+        $json = json_decode(file_get_contents('php://input'));
     
-    echo json_encode(["url" => $CFG->wwwroot . "/course/view.php?id=" . $courseid]);
+        $categoryid = suap_sync_get_or_create_category_hierarchy($json);
+        $courseid = suap_sync_course($categoryid, $json);
+        $context = context_course::instance($courseid);
+    
+        $issuerid = sync_suap_issuer();
+    
+        $principal_config = get_enrolment_config($courseid, 'principal');
+        $moderador_config = get_enrolment_config($courseid, 'moderador');
+        foreach ($json->professores as $professor) {
+            $userid = suap_sync_user($professor, $issuerid);
+            $conf = $professor->tipo == 'Principal' || $professor->tipo == 'Formador' ? $principal_config : $moderador_config;
+            suap_sync_enrol($context->id, $userid, $conf->enrolid, $conf->roleid);
+        }
+    
+        $aluno_config = get_enrolment_config($courseid, 'aluno');
+        foreach ($json->alunos as $aluno) {
+            $userid = suap_sync_user($aluno, $issuerid);
+            suap_sync_enrol($context->id, $userid, $aluno_config->enrolid, $aluno_config->roleid);
+            suap_sync_group($courseid, $userid, $aluno->polo);
+        }
+        
+        echo json_encode(["url" => $CFG->wwwroot . "/course/view.php?id=" . $courseid]);
+    } catch (Exception $ex) {
+        echo json_encode(["error" => ["message" => $ex->getMessage()]]);
+    }
 }
 
 suap_sync_up();
