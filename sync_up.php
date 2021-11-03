@@ -276,6 +276,7 @@ function suap_sync_up() {
         
         echo json_encode(["url" => $CFG->wwwroot . "/course/view.php?id=" . $courseid]);
     } catch (Exception $ex) {
+        http_response_code(500);
         echo json_encode(["error" => ["message" => $ex->getMessage()]]);
     }
 }
