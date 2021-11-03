@@ -46,10 +46,16 @@ function suap_sync_get_or_create_category_hierarchy($data) {
         get_config('auth_suap', 'category_diarios_parent') ?: 0
     );
 
+    $campus = suap_sync_get_or_create_category(
+        $data->campus->sigla, 
+        $data->campus->descricao, 
+        $diarios->id
+    );
+
     $curso = suap_sync_get_or_create_category(
         $data->curso->codigo, 
         $data->curso->nome, 
-        $diarios->id
+        $campus->id
     );
 
     $ano_periodo = substr($data->turma->codigo, 0, 4) . "." . substr($data->turma->codigo, 4, 1);
@@ -250,7 +256,7 @@ function suap_sync_up() {
     try { 
         suap_sync_authenticate();
 
-        // $json = json_decode(file_get_contents('sample.json'));
+        # $json = json_decode(file_get_contents('sample.json'));
         // $json = json_decode(file_get_contents('php://input'));
         if (!array_key_exists('file', $_POST)) {
             throw new Exception("Atributo 'file' é obrigatório");
@@ -284,7 +290,11 @@ function suap_sync_up() {
         echo json_encode(["url" => $CFG->wwwroot . "/course/view.php?id=" . $courseid]);
     } catch (Exception $ex) {
         http_response_code(500);
-        echo json_encode(["error" => ["message" => $ex->getMessage()]]);
+        if ($ex->getMessage() == "Data submitted is invalid (value: Data submitted is invalid)") {
+            echo json_encode(["error" => ["message" => "Ocorreu uma inconsistência no servidor do AVA. Este erro é conhecido e a solução dele já está sendo estudado pela equipe de desenvolvimento. Favor tentar novamente em 5 minutos."]]);
+        } else {
+            echo json_encode(["error" => ["message" => $ex->getMessage()]]);
+        }
     }
 }
 
