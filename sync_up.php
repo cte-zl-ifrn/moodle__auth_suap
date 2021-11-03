@@ -252,7 +252,13 @@ function suap_sync_up() {
 
         // $json = json_decode(file_get_contents('sample.json'));
         // $json = json_decode(file_get_contents('php://input'));
+        if (!array_key_exists('file', $_POST)) {
+            throw new Exception("Atributo 'file' é obrigatório");
+        }
         $json = json_decode($_POST['file']);
+        if (empty($json)) {
+            throw new Exception("Atributo 'file' sem JSON ou com JSON inválido.");
+        }
 
         $categoryid = suap_sync_get_or_create_category_hierarchy($json);
         $courseid = suap_sync_course($categoryid, $json);
