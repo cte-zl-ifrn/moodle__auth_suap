@@ -32,10 +32,10 @@ function suap_sync_get_or_create_category($idnumber, $name, $parent){
 
     $course_category = $DB->get_record('course_categories', ['idnumber'=>$idnumber]);
     if (empty($course_category)) {
-        $course_category = \core_course_category::create(['name'=>$name, 'idnumber'=>$idnumber, $parent]);
+        $course_category = \core_course_category::create(['name'=>$name, 'idnumber'=>$idnumber, 'parent'=>$parent]);
     }
 
-    return $course_category->id;
+    return $course_category;
 }
 
 
