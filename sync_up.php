@@ -250,9 +250,10 @@ function suap_sync_up() {
     try { 
         suap_sync_authenticate();
 
-        # $json = json_decode(file_get_contents('sample.json'));
-        $json = json_decode(file_get_contents('php://input'));
-    
+        // $json = json_decode(file_get_contents('sample.json'));
+        // $json = json_decode(file_get_contents('php://input'));
+        $json = json_decode($_POST['file']);
+
         $categoryid = suap_sync_get_or_create_category_hierarchy($json);
         $courseid = suap_sync_course($categoryid, $json);
         $context = context_course::instance($courseid);
