@@ -20,7 +20,11 @@ if ($ADMIN->fulltree) {
     // Introductory explanation.
     $settings->add(new admin_setting_heading('auth_suap/pluginname', '', get_string('auth_suap_description', 'auth_suap')));
 
-    create_setting_configtext($settings, "sync_up_auth_token", sha1(uniqid()));
+    if ($CFG->env == 'local') {
+        create_setting_configtext($settings, "sync_up_auth_token", 'changeme');
+    } else {
+        create_setting_configtext($settings, "sync_up_auth_token", sha1(uniqid()));
+    }
 
     create_setting_configtext($settings, "aluno_auth", 'oauth2');
     create_setting_configtext($settings, "aluno_role_id", 5);

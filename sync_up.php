@@ -9,20 +9,21 @@ require_once("../../enrol/externallib.php");
 require_once("../../enrol/externallib.php");
 require_once(__DIR__.'/locallib.php');
 
+function dienow($message, $code) {
+    http_response_code($code);
+    die(json_encode(["message"=>$message, "code"=>$code]));
+}
+
 
 function suap_sync_authenticate() {
     $sync_up_auth_token = get_config('auth_suap', 'sync_up_auth_token');
 
     if (!array_key_exists('Authentication', getallheaders())) {
-        header("HTTP/1.1 400 Bad Request - Authentication not informed");
-        echo "400 Bad Request - Authentication not informed";
-        exit;
+        dienow("Bad Request - Authentication not informed", 400);
     }
 
     if ("Token $sync_up_auth_token" != getallheaders()['Authentication']) {
-        header("HTTP/1.1 401 Unauthorized");
-        echo "401 Unauthorized.";
-        exit;
+        dienow("Unauthorized", 401);
     }
 }
 
@@ -61,10 +62,16 @@ function suap_sync_get_or_create_category_hierarchy($data) {
     $ano_periodo = substr($data->turma->codigo, 0, 4) . "." . substr($data->turma->codigo, 4, 1);
     $semestre = suap_sync_get_or_create_category(
         "{$data->curso->codigo}.{$ano_periodo}",
-        $ano_periodo, 
+        $ano_periodo,
         $curso->id
     );
-    return $semestre->id;
+
+    $turma = suap_sync_get_or_create_category(
+        $data->turma->codigo,
+        $data->turma->codigo, 
+        $semestre->id
+    );
+    return $turma->id;
 }
 
 
@@ -86,34 +93,34 @@ function suap_sync_course($categoryid, $json){
             "enablecompletion"=>1,
             "completionnotify"=>1,
             
-            "customfield_campus_id"=> $json->campus->id,
-            "customfield_campus_descricao"=> $json->campus->descricao,
-            "customfield_campus_sigla"=> $json->campus->sigla,
+            // "customfield_campus_id"=> $json->campus->id,
+            // "customfield_campus_descricao"=> $json->campus->descricao,
+            // "customfield_campus_sigla"=> $json->campus->sigla,
 
-            "customfield_curso_id"=> $json->curso->id,
-            "customfield_curso_codigo"=> $json->curso->codigo,
-            "customfield_curso_descricao"=> $json->curso->descricao,
-            "customfield_curso_nome"=> $json->curso->nome,
+            // "customfield_curso_id"=> $json->curso->id,
+            // "customfield_curso_codigo"=> $json->curso->codigo,
+            // "customfield_curso_descricao"=> $json->curso->descricao,
+            // "customfield_curso_nome"=> $json->curso->nome,
 
-            "customfield_turma_id"=> $json->turma->id,
-            "customfield_turma_codigo"=> $json->turma->codigo,
+            // "customfield_turma_id"=> $json->turma->id,
+            // "customfield_turma_codigo"=> $json->turma->codigo,
 
-            "customfield_diario_id"=> $json->diario->id,
-            "customfield_diario_situacao"=> $json->diario->situacao,
-            "customfield_diario_descricao"=> $json->diario->descricao,
-            "customfield_diario_descricao_historico"=> $json->diario->descricao_historico,
-            "customfield_diario_sigla"=> $json->diario->sigla,
+            // "customfield_diario_id"=> $json->diario->id,
+            // "customfield_diario_situacao"=> $json->diario->situacao,
+            // "customfield_diario_descricao"=> $json->diario->descricao,
+            // "customfield_diario_descricao_historico"=> $json->diario->descricao_historico,
+            // "customfield_diario_sigla"=> $json->diario->sigla,
 
-            #"customfield_polo_id"=> $json->polo->id,
-            #"customfield_polo_nome"=> $json->polo->nome,
+            // #"customfield_polo_id"=> $json->polo->id,
+            // #"customfield_polo_nome"=> $json->polo->nome,
 
-            "customfield_disciplina_id"=> $json->componente->id,
-            "customfield_disciplina_descricao_historico"=> $json->componente->descricao_historico,
-            "customfield_disciplina_sigla"=> $json->componente->sigla,
-            "customfield_disciplina_periodo"=> $json->componente->periodo,
-            "customfield_disciplina_tipo"=> $json->componente->tipo,
-            "customfield_disciplina_optativo"=> $json->componente->optativo,
-            "customfield_disciplina_qtd_avaliacoes"=> $json->componente->qtd_avaliacoes,
+            // "customfield_disciplina_id"=> $json->componente->id,
+            // "customfield_disciplina_descricao_historico"=> $json->componente->descricao_historico,
+            // "customfield_disciplina_sigla"=> $json->componente->sigla,
+            // "customfield_disciplina_periodo"=> $json->componente->periodo,
+            // "customfield_disciplina_tipo"=> $json->componente->tipo,
+            // "customfield_disciplina_optativo"=> $json->componente->optativo,
+            // "customfield_disciplina_qtd_avaliacoes"=> $json->componente->qtd_avaliacoes,
         ];
         $course = create_course($data);
     }
@@ -150,7 +157,7 @@ function suap_sync_user($user, $issuerid){
         'username'=>$username,
         'password'=>'!aA1' . uniqid(),
         'timezone'=>'99',
-        'lang'=>'pt_br',
+        // 'lang'=>'pt_br',
         'confirmed'=>1,
         'mnethostid'=>1,
     ];
@@ -256,14 +263,12 @@ function suap_sync_up() {
     try { 
         suap_sync_authenticate();
 
-        # $json = json_decode(file_get_contents('sample.json'));
-        // $json = json_decode(file_get_contents('php://input'));
         if (!array_key_exists('jsonstring', $_POST)) {
-            throw new Exception("Atributo 'jsonstring' é obrigatório");
+            dienow("Atributo \'jsonstring\' é obrigatório.", 550);
         }
         $json = json_decode($_POST['jsonstring']);
         if (empty($json)) {
-            throw new Exception("Atributo 'jsonstring' sem JSON ou com JSON inválido.");
+            dienow("Atributo 'jsonstring' sem JSON ou com JSON inválido.", 551);
         }
 
         $categoryid = suap_sync_get_or_create_category_hierarchy($json);
@@ -271,22 +276,23 @@ function suap_sync_up() {
         $context = context_course::instance($courseid);
     
         $issuerid = sync_suap_issuer();
-    
+
         $principal_config = get_enrolment_config($courseid, 'principal');
         $moderador_config = get_enrolment_config($courseid, 'moderador');
         foreach ($json->professores as $professor) {
             $userid = suap_sync_user($professor, $issuerid);
-            $conf = $professor->tipo == 'Principal' || $professor->tipo == 'Formador' ? $principal_config : $moderador_config;
+            $tipo = strtolower($professor->tipo);
+            $conf = $tipo == 'principal' || $tipo == 'formador' ? $principal_config : $moderador_config;
             suap_sync_enrol($context->id, $userid, $conf->enrolid, $conf->roleid);
         }
-    
+
         $aluno_config = get_enrolment_config($courseid, 'aluno');
         foreach ($json->alunos as $aluno) {
             $userid = suap_sync_user($aluno, $issuerid);
             suap_sync_enrol($context->id, $userid, $aluno_config->enrolid, $aluno_config->roleid);
             suap_sync_group($courseid, $userid, $aluno->polo);
         }
-        
+
         echo json_encode(["url" => $CFG->wwwroot . "/course/view.php?id=" . $courseid]);
     } catch (Exception $ex) {
         http_response_code(500);
@@ -298,4 +304,18 @@ function suap_sync_up() {
     }
 }
 
-suap_sync_up();
+function suap_sync_down() {
+    dienow("Não implementado.", 501);
+}
+
+function suap_sync() {
+    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+        suap_sync_up();
+    } else if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+        suap_sync_down();
+    } else {
+        dienow("Método não permitido.", 405);
+    }
+}
+
+suap_sync();
