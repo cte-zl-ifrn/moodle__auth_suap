@@ -49,23 +49,20 @@ function suap_bulk_course_custom_field() {
 
     suap_save_course_custom_field($cid, 'turma_id', 'ID da turma');
     suap_save_course_custom_field($cid, 'turma_codigo', 'Código da turma');
-    
+
+    suap_save_course_custom_field($cid, 'turma_ano_periodo', 'Ano/Semestre da turma');
+
     suap_save_course_custom_field($cid, 'diario_id', 'ID do diario');
     suap_save_course_custom_field($cid, 'diario_situacao', 'Situação do diario');
-    suap_save_course_custom_field($cid, 'diario_descricao', 'Descrição do diario');
-    suap_save_course_custom_field($cid, 'diario_descricao_historico', 'Descrição no histórico do diario');
-    suap_save_course_custom_field($cid, 'diario_sigla', 'Sigla do diario');
 
-    suap_save_course_custom_field($cid, 'polo_id', 'ID da polo');
-    suap_save_course_custom_field($cid, 'polo_nome', 'Nome da polo');
-    
-    suap_save_course_custom_field($cid, 'disciplina_id', 'ID do disciplina');
-    suap_save_course_custom_field($cid, 'disciplina_descricao_historico', 'Descrição do disciplina');
-    suap_save_course_custom_field($cid, 'disciplina_sigla', 'Sigla do diario');
-    suap_save_course_custom_field($cid, 'disciplina_periodo', 'Período do disciplina');
-    suap_save_course_custom_field($cid, 'disciplina_tipo', 'Tipo do disciplina');
-    suap_save_course_custom_field($cid, 'disciplina_optativo', 'Optativo do disciplina');
-    suap_save_course_custom_field($cid, 'disciplina_qtd_avaliacoes', 'Quantidade de avaliações do disciplina');
+    suap_save_course_custom_field($cid, 'disciplina_id', 'ID da disciplina');
+    suap_save_course_custom_field($cid, 'disciplina_descricao', 'Descrição da disciplina');
+    suap_save_course_custom_field($cid, 'disciplina_descricao_historico', 'Descrição da disciplina que constará no histórico');
+    suap_save_course_custom_field($cid, 'disciplina_sigla', 'Sigla da disciplina');
+    suap_save_course_custom_field($cid, 'disciplina_periodo', 'Período da disciplina');
+    suap_save_course_custom_field($cid, 'disciplina_tipo', 'Tipo da disciplina');
+    suap_save_course_custom_field($cid, 'disciplina_optativo', 'Optativo da disciplina');
+    suap_save_course_custom_field($cid, 'disciplina_qtd_avaliacoes', 'Quantidade de avaliações da disciplina');
 }
 
 
@@ -91,4 +88,6 @@ function suap_bulk_user_custom_field() {
     
     suap_save_user_custom_field($cid, 'polo_id', 'ID da polo');
     suap_save_user_custom_field($cid, 'polo_nome', 'Nome da polo');
+    
+    suap_save_user_custom_field($cid, 'ingresso_periodo', 'Período de ingresso');
 }
