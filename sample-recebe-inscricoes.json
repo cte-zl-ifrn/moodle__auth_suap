@@ -39,21 +39,30 @@
     {
       "id": 9,
       "nome": "Professor com nome completo",
+      "nome_usual": "Professor foda",
+      "login": "0000000",
       "email": "nome.sobrenome@ifrn.edu.br",
       "email_secundario": "nome.sobrenome@professorx.com",
+      "status": "ativo",
+      "foto-url": "",
+      "cpf": "12345678901",
+
       "tipo": "Principal",
-      "login": "0000000",
-      "status": "ativo"
+      "tipo_colaborador": "Técnico-administrativo|Prestador"
     }
   ],
   "alunos": [
     {
       "id": 10,
-      "matricula": "202021000000001",
       "nome": "Aluno com nome completo",
+      "nome_usual": "Aluno massa",
+      "matricula": "202021000000001",
       "email": "nome.sobrenome@alunoz.com",
       "email_secundario": "nome.sobrenome@alunoz.com",
       "situacao": "ativo",
+      "foto-url": "",
+      "cpf": "12345678901",
+
       "polo": {
         "id": 5,
         "nome": "Nome do polo"
