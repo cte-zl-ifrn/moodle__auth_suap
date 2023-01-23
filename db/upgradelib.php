@@ -46,6 +46,7 @@ function suap_bulk_course_custom_field() {
     suap_save_course_custom_field($cid, 'curso_codigo', 'Código do curso');
     suap_save_course_custom_field($cid, 'curso_descricao', 'Descrição do curso');
     suap_save_course_custom_field($cid, 'curso_nome', 'Nome do curso');
+    suap_save_course_custom_field($cid, 'curso_sala_coordenacao', 'É sala de coordenação');
 
     suap_save_course_custom_field($cid, 'turma_id', 'ID da turma');
     suap_save_course_custom_field($cid, 'turma_codigo', 'Código da turma');
@@ -81,7 +82,6 @@ function suap_bulk_user_custom_field() {
     suap_save_user_custom_field($cid, 'curso_id', 'ID do curso');
     suap_save_user_custom_field($cid, 'curso_codigo', 'Código do curso');
     suap_save_user_custom_field($cid, 'curso_descricao', 'Descrição do curso');
-    suap_save_user_custom_field($cid, 'curso_nome', 'Nome do curso');
 
     suap_save_user_custom_field($cid, 'turma_id', 'ID da turma');
     suap_save_user_custom_field($cid, 'turma_codigo', 'Código da turma');
