@@ -25,9 +25,6 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-/**
- * Custom uninstallation procedure.
- */
 function xmldb_auth_suap_uninstall() {
     return true;
 }

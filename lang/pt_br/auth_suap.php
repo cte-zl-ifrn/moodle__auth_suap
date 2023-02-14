@@ -28,51 +28,12 @@ defined('MOODLE_INTERNAL') || die();
 $string['pluginname'] = 'SUAP';
 $string['auth_suap_description'] = 'SUAP';
 $string['auth_description'] = '1';
-$string['auth_apifunc'] = 'Function API';
-$string['auth_apifunc_desc'] = 'API Chamada de função.';
-$string['auth_apiurl'] = 'URL API';
-$string['auth_apiurl_desc'] = 'Chamadas de API do endereço.';
-$string['auth_baseurl'] = 'URL Provider';
-$string['auth_baseurl_desc'] = 'Endereço de base do provedor..
-<br>Callback URL: '.$CFG->wwwroot.'/auth/suap/callback.php';
-$string['auth_consumer_key'] = 'Consumer Key';
-$string['auth_consumer_key_desc'] = 'Chave de autorização consumer_key';
-$string['auth_consumer_secret'] = 'Consumer Secret';
-$string['auth_consumer_secret_desc'] = 'Chave de autorização consumer_secret';
-$string['auth_fieldlocks_help'] = 'Esses campos são opcionais. E pode optar por preencher alguns campos de usuário Moodle com dados dos campos OAUTH.<br><br>
-<b>Atualizar dados interno</b>: Se ativado, impedir que os usuários e administradores para alterar o campo diretamente para o Moodle.<br><br>
-<b>Bloqueia Valor</b>: Se abilitato, impedirà agli utenti e agli amministratori di Moodle di modificare il campo direttamente.';
-$string['auth_suapdescription'] = 'Permite que o usuário se conectar ao site através de um serviço externo (suap).
-A primeira vez que você entra, você criar uma nova conta.
-<br>Opção "<a href="'.$CFG->wwwroot.'/admin/search.php?query=authpreventaccountcreation">Evite criar contas no momento da autenticação</a>" <b>não deve</b> ser ativo.';
-$string['auth_suapsettings'] = 'Configurações';
 
+$string['base_url'] = 'URL base';
+$string['base_url_desc'] = 'Informe o URL do seu SUAP';
 
-$string['error_incomplete_params'] = 'Parâmetros incompletos ($a).';
-$string['configtitle'] = 'SUAP';
-$string['generalsettings'] = 'General settings';
-$string['sync_up_auth_token'] = 'Token de autenticação';
-$string['sync_up_auth_token_desc'] = 'Token que será passado pelo SUAP Middleware para autenticar-se no Moodle. Será no header "Authentication" e o conteúdo será "Token ****", onde **** é o token em si.';
-$string['default_user_preferences'] = 'Preferências de padrões do usuários';
-$string['default_user_preferences_desc'] = 'Preferencias de padrões do usuários. Cada valor é preferência é separada por uma quebra de linha. A chave e o valor são separados pelo signal de igual =.';
+$string['client_id'] = 'ID do cliente';
+$string['client_id_desc'] = "Lembre-se de primeiro cadastrar este Moodle na sua lista de aplicações no SUAP (Tec. da Informação / Serviços / Aplicações OAUTH2). Cadastre como 'Authorization code', 'Public' e como 'Redirect uris' coloque '{$CFG->wwwroot}/admin/oauth2callback.php'.";
 
-$string['aluno_auth'] = 'Método de autenticação do aluno';
-$string['aluno_auth_desc'] = 'Método de autenticação do aluno';
-$string['aluno_role_id'] = 'RoleID do aluno';
-$string['aluno_role_id_desc'] = 'RoleID do aluno';
-$string['aluno_enrol_type'] = 'EnrolType do aluno';
-$string['aluno_enrol_type_desc'] = 'EnrolType do aluno';
-
-$string['principal_auth'] = 'Método de autenticação do professor';
-$string['principal_auth_desc'] = 'Método de autenticação do professor';
-$string['principal_role_id'] = 'RoleID do professor';
-$string['principal_role_id_desc'] = 'RoleID do professor';
-$string['principal_enrol_type'] = 'EnrolType do professor';
-$string['principal_enrol_type_desc'] = 'EnrolType do professor';
-
-$string['moderador_auth'] = 'Método de autenticação do moderador';
-$string['moderador_auth_desc'] = 'Método de autenticação do moderador';
-$string['moderador_role_id'] = 'RoleID do moderador';
-$string['moderador_role_id_desc'] = 'RoleID do moderador';
-$string['moderador_enrol_type'] = 'EnrolType do moderador';
-$string['moderador_enrol_type_desc'] = 'EnrolType do moderador';
+$string['client_secret'] = 'Secredo do cliente';
+$string['client_secret_desc'] = "Lembre-se, se você não salvar logo 'Secredo do cliente' ao editar ele não estará mais disponível, ou seja, será necessário cadastrar novo serviço.";

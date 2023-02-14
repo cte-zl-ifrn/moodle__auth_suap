@@ -1,19 +1,4 @@
 <?php
-// This file is part of Moodle - http://moodle.org/
-//
-// Moodle is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// Moodle is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
-
 /**
  * Authentication class for suap is defined here.
  *
@@ -24,183 +9,170 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-require_once($CFG->libdir.'/authlib.php');
+require_once("$CFG->dirroot/user/lib.php");
+require_once("$CFG->dirroot/user/profile/lib.php");
+require_once("$CFG->dirroot/lib/authlib.php");
+require_once("$CFG->dirroot/auth/suap/classes/Httpful/Bootstrap.php");
+\Httpful\Bootstrap::init();
 
 
-/**
- * Authentication class for suap.
- */
 class auth_plugin_suap extends auth_plugin_base {
 
-    /**
-     * Set the properties of the instance.
-     */
     public function __construct() {
         $this->authtype = 'suap';
         $this->roleauth = 'auth_suap';
-        $this->errorlogtag = '[AUTH suap] ';
-        $this->config = get_config('auth/suap');
+        $this->errorlogtag = '[AUTH SUAP] ';
+        $this->config = get_config('auth_suap');
+        $this->usuario = null;
     }
 
-    /**
-     * Returns true if the username and password work and false if they are
-     * wrong or don't exist.
-     *
-     * @param string $username The username.
-     * @param string $password The password.
-     * @return bool Authentication success or failure.
-     */
     public function user_login($username, $password) {
-        global $DB, $CFG;
-
-        // Retrieve the user matching username.
-        $user = $DB->get_record('user', array('username' => $username));
-        // Username must exist and have the right authentication method.
-        if (!empty($user) && ($user->auth == 'suap')) {
-            return true;
-        }
-
         return false;
     }
 
-    /**
-     * Returns true if this authentication plugin can change the user's password.
-     *
-     * @return bool
-     */
     public function can_change_password() {
         return false;
     }
 
-    /**
-     * Returns true if this authentication plugin is "internal".
-     *
-     * Internal plugins use password hashes from Moodle user table for authentication.
-     *
-     * @return bool
-     */
     public function is_internal() {
         return false;
     }
 
-    /**
-     * Indicates if password hashes should be stored in local moodle database.
-     *
-     * @return bool True means password hash stored in user table, false means flag 'not_cached' stored there instead.
-     */
-    public function prevent_local_passwords() {
-        return true;
-    }
-
-    /**
-     * Authentication hook - is called every time user hit the login page
-     * The code is run only if the param code is mentionned.
-     */
-    function loginpage_hook() {
-        global $SESSION, $CFG, $DB, $USER;
-		$CFG->nolastloggedin = true;
-        
-    }
-
-    function get_userinfo($username) {
-        global $SESSION, $CFG;
-
-        return $result;
-    }
-
-    function get_attributes() {
-        $moodleattributes = array();
-        $customfields = $this->get_custom_user_profile_fields();
-        if (!empty($customfields) && !empty($this->userfields)) {
-            $userfields = array_merge($this->userfields, $customfields);
-        } else {
-            $userfields = $this->userfields;
-        }
-
-        foreach ($userfields as $field) {
-            if (!empty($this->config->{"field_map_$field"})) {
-                $moodleattributes[$field] = core_text::strtolower(trim($this->config->{"field_map_$field"}));
-            }
-        }
-        $moodleattributes['username'] = core_text::strtolower(trim($this->config->username));
-        return $moodleattributes;
-    }
-
-    /**
-     * Called when the user record is updated.
-     *
-     * We check there is no hack-attempt by a user to change his/her email address
-     *
-     * @param mixed $olduser     Userobject before modifications    (without system magic quotes)
-     * @param mixed $newuser     Userobject new modified userobject (without system magic quotes)
-     * @return boolean result
-     *
-     */
-    function user_update($olduser, $newuser) {
-        if ($olduser->email != $newuser->email) {
-            return false;
-        } else {
-            return true;
-        }
-    }
-    
     function postlogout_hook($user){
         global $CFG;
         if($user->auth != 'suap'){
             return 0;
         }
         $config = get_config('auth/suap');
-
-        $url=$config->apiurl.'/logout/';
-        $config = get_config('auth/suap');
-
         redirect($CFG->wwwroot.'/auth/suap/logout.php');
     }
 
-    /**
-     * Prints a form for configuring this authentication plugin.
-     *
-     * This function is called from admin/auth.php, and outputs a full page with
-     * a form for configuring this plugin.
-     *
-     * @param object $config
-     * @param object $err
-     * @param array $user_fields
-     */
-    public function config_form($config, $err, $user_fields) {
+    public function login() {
+        global $CFG, $USER, $SESSION;
 
-        // A html file for the form can be included here:
-        include 'config.html';
+        $next = isset($_GET['next']) ? $_GET['next'] : $CFG->wwwroot;
 
-    }
-
-    /**
-     * Processes and stores configuration data for the plugin.
-     *
-     * @param stdClass $config Object with submitted configuration settings (without system magic quotes).
-     * @return bool True if the configuration was processed successfully.
-     */
-    function process_config($config) {
-        // Set to defaults if undefined.
-        if (!isset ($config->consumer_key)) {
-            $config->consumer_key = '';
-        }
-        if (!isset ($config->consumer_secret)) {
-            $config->consumer_secret = '';
-        }
-        if (!isset ($config->baseurl)) {
-            $config->baseurl = '';
+        if ($USER->id) {
+            header("Location: $next", true, 302);
+        } else {
+            $SESSION->next_after_next = $next;
+            $redirect_uri = "$CFG->wwwroot/auth/suap/authenticate.php";
+            header("Location: {$this->config->base_url}/o/authorize/?response_type=code&client_id={$this->config->client_id}&redirect_uri=$redirect_uri", true, 302);
         }        
-        if (!isset ($config->apiurl)) {
-            $config->apiurl = '';
+    }
+
+    public function authenticate() {
+        global $CFG, $USER;
+
+        if ($USER->id) {
+            header("Location: $next", true, 302);
+            die();
         }
 
-        // Save settings.
-        set_config('consumer_key', $config->consumer_key, 'auth/suap');
-        set_config('consumer_secret', $config->consumer_secret, 'auth/suap');
-        set_config('baseurl', $config->baseurl, 'auth/suap');
-        set_config('apiurl', $config->apiurl, 'auth/suap');
+        $conf = get_config('auth_suap');
+        
+        if (!isset($_GET['code'])) {
+            throw new Exception("O código de autenticação não foi informado.");
+        }
 
-        return true;
+        try {
+            $auth = json_decode(
+                \Httpful\Request::post(
+                    "$conf->base_url/o/token/",
+                    [
+                        'grant_type' => 'authorization_code',
+                        'code' => $_GET['code'],
+                        'redirect_uri' => "{$CFG->wwwroot}/auth/suap/authenticate.php",
+                        'client_id' => $conf->client_id,
+                        'client_secret' => $conf->client_secret
+                    ],
+                    \Httpful\Mime::FORM
+                )->send()->raw_body
+            );
+
+            $userdata = json_decode(
+                \Httpful\Request::get("$conf->base_url/api/eu/?scope=" . urlencode('identificacao documentos_pessoais'))
+                    ->addHeaders(["Authorization" => "Bearer {$auth->access_token}", 'x-api-key' => $conf->client_secret, 'Accept' => 'application/json'])
+                    ->send()->raw_body
+            );
+        } catch (Exception $e) {
+            echo "<p>Erro ao tentar integrar com o SUAP. Aguarde alguns minutos e <a href='{$CFG->wwwroot}/auth/suap/login.php'>tente novamente</a>.";
+            die();
+        }
+
+        $this->create_or_update_user($userdata);
     }
+
+    function create_or_update_user($userdata){
+        global $DB, $USER, $SESSION;
+        /*
+        "identificacao": user.username,
+        "nome": user.get_full_name(),
+        "primeiro_nome": user.first_name,
+        "ultimo_nome": user.last_name,
+        "email": user.email,
+        "email_secundario": relacionamento.pessoa_fisica.email_secundario,
+        "email_google_classroom": getattr(relacionamento, "email_google_classroom", None),
+        "email_academico": getattr(relacionamento, "email_academico", None),
+        "email_preferencial": data['email'] or data['email_secundario'] or data['email_academico'] or data['email_google_classroom']
+        "campus": campus and str(campus) or None,
+        
+        # allow_scopes == "documentos_pessoais"
+        "cpf": relacionamento.pessoa_fisica.cpf
+        "data_de_nascimento": relacionamento.pessoa_fisica.nascimento_data
+        "sexo": relacionamento.pessoa_fisica.sexo
+        */
+        $usuario = $DB->get_record("user", ["username" => $userdata->identificacao]);
+        if (!$usuario) {
+            $usuario = (object)[
+                'username' => $userdata->identificacao,
+                'firstname' => $userdata->primeiro_nome,
+                'lastname' => $userdata->ultimo_nome,
+                'email' => $userdata->email_preferencial,
+                'auth' => 'suap',
+                'suspended' => 0,
+                'password' => '!aA1' . uniqid(),
+                'timezone' => '99',
+                // 'lang'=>'pt_br',
+                'confirmed' => 1,
+                'mnethostid' => 1,
+                'policyagreed' => 0,
+                'deleted' => 0,
+                'firstaccess' => time(),
+                'currentlogin' => time(),
+                'lastip' => $_SERVER['REMOTE_ADDR'],
+                'firstnamephonetic' => null,
+                'lastnamephonetic' => null,
+                'middlename' => null,
+                'alternatename' => null,
+                // 'picture' => '',
+            ];
+            $usuario->id = \user_create_user($usuario);
+        }
+
+        $usuario->firstname = $userdata->primeiro_nome;
+        $usuario->lastname = $userdata->ultimo_nome;
+        $usuario->email = $userdata->email_preferencial;
+        $usuario->auth = 'suap';
+        $usuario->suspended = 0;
+        $usuario->profile_field_nome_apresentacao = $userdata->nome;
+        $usuario->profile_field_nome_completo = property_exists($userdata, 'nome_completo') ? $userdata->nome_completo : null;
+        $usuario->profile_field_nome_social = property_exists($userdata, 'nome_social') ? $userdata->nome_social : null;
+        $usuario->profile_field_email_secundario = property_exists($userdata, 'email_secundario') ? $userdata->email_secundario : null;
+        $usuario->profile_field_email_google_classroom = property_exists($userdata, 'email_google_classroom') ? $userdata->email_google_classroom : null;
+        $usuario->profile_field_email_academico = property_exists($userdata, 'email_academico') ? $userdata->email_academico : null;
+        $usuario->profile_field_campus_sigla = $userdata->campus;
+        $this->usuario = $usuario;
+        $this->update_user_record($this->usuario->username, ['firstname', 'lastname', 'email', 'auth', 'suspended', 'profile_field_nome_apresentacao', 'profile_field_nome_completo', 'profile_field_nome_social', 'profile_field_email_secundario', 'profile_field_email_google_classroom', 'profile_field_email_academico', 'profile_field_campus_sigla']);
+        // $DB->update_record('user', $this->usuario);
+        $next = $SESSION->next_after_next;
+
+        complete_user_login($usuario);
+        header("Location: $next", true, 302);
+    }
+
+    function get_userinfo($username) {
+        return get_object_vars($this->usuario);
+    }
+
 }

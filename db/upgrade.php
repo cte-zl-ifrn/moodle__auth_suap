@@ -34,7 +34,5 @@ require_once(__DIR__.'/upgradelib.php');
  * @return bool
  */
 function xmldb_auth_suap_upgrade($oldversion) {
-    suap_bulk_course_custom_field();
-    suap_bulk_user_custom_field();
     return true;
 }
