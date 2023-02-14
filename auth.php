@@ -161,10 +161,9 @@ class auth_plugin_suap extends auth_plugin_base {
         $usuario->profile_field_email_secundario = property_exists($userdata, 'email_secundario') ? $userdata->email_secundario : null;
         $usuario->profile_field_email_google_classroom = property_exists($userdata, 'email_google_classroom') ? $userdata->email_google_classroom : null;
         $usuario->profile_field_email_academico = property_exists($userdata, 'email_academico') ? $userdata->email_academico : null;
-        $usuario->profile_field_campus_sigla = $userdata->campus;
+        $usuario->profile_field_campus_sigla = property_exists($userdata, 'campus') ? $userdata->campus : null;
         $this->usuario = $usuario;
-        $this->update_user_record($this->usuario->username, ['firstname', 'lastname', 'email', 'auth', 'suspended', 'profile_field_nome_apresentacao', 'profile_field_nome_completo', 'profile_field_nome_social', 'profile_field_email_secundario', 'profile_field_email_google_classroom', 'profile_field_email_academico', 'profile_field_campus_sigla']);
-        // $DB->update_record('user', $this->usuario);
+        $this->update_user_record($this->usuario->username);
         $next = $SESSION->next_after_next;
 
         complete_user_login($usuario);
