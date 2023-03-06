@@ -50,7 +50,13 @@ class auth_plugin_suap extends auth_plugin_base {
     public function login() {
         global $CFG, $USER, $SESSION;
 
-        $next = isset($_GET['next']) ? $_GET['next'] : $CFG->wwwroot;
+        if (isset($_GET['next'])) {
+            $next = $_GET['next'];
+        } elseif (property_exists($SESSION, 'wantsurl')) {
+            $next = $SESSION->wantsurl;
+        } else {
+            $next = $CFG->wwwroot;
+        }
 
         if ($USER->id) {
             header("Location: $next", true, 302);
