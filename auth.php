@@ -12,11 +12,12 @@ defined('MOODLE_INTERNAL') || die();
 require_once("$CFG->dirroot/user/lib.php");
 require_once("$CFG->dirroot/user/profile/lib.php");
 require_once("$CFG->dirroot/lib/authlib.php");
+require_once("$CFG->dirroot/lib/classes/user.php");
 require_once("$CFG->dirroot/auth/suap/classes/Httpful/Bootstrap.php");
 \Httpful\Bootstrap::init();
 
 
-class auth_plugin_suap extends auth_plugin_base {
+class auth_plugin_suap extends auth_oauth2\auth {
 
     public function __construct() {
         $this->authtype = 'suap';
@@ -163,10 +164,33 @@ class auth_plugin_suap extends auth_plugin_base {
         $usuario->profile_field_email_academico = property_exists($userdata, 'email_academico') ? $userdata->email_academico : null;
         $usuario->profile_field_campus_sigla = property_exists($userdata, 'campus') ? $userdata->campus : null;
         $this->usuario = $usuario;
+
+        complete_user_login($usuario);
+
+        if ( property_exists($userdata, 'foto') ) {
+            require_once( $CFG->libdir . '/gdlib.php' );
+            $tmp_file = sys_get_temp_dir() . '/' . basename($userdata->foto);
+            $usericonid = process_new_icon( context_user::instance( $usuario->id, MUST_EXIST ), 'user', 'icon', 0, $tmp_file );
+            if ( $usericonid ) {
+                    $DB->set_field( 'user', 'picture', $usericonid, array( 'id' => $usuario->id ) );
+            }
+
+            $coursecontext = context_system::instance();
+            $usuario->imagefile = $draftitemid;
+            core_user::update_picture(
+                $usuario,
+                [
+                    'maxbytes' => $CFG->maxbytes,
+                    'subdirs' => 0,
+                    'maxfiles' => 1,
+                    'accepted_types' => 'optimised_image'
+                ]
+            );
+        }
+        
         $this->update_user_record($this->usuario->username);
         $next = $SESSION->next_after_next;
 
-        complete_user_login($usuario);
         header("Location: $next", true, 302);
     }
 
