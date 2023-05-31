@@ -51,7 +51,13 @@ class auth_plugin_suap extends auth_oauth2\auth {
     public function login() {
         global $CFG, $USER, $SESSION;
 
-        $next = isset($_GET['next']) ? $_GET['next'] : $CFG->wwwroot;
+        if (isset($_GET['next'])) {
+            $next = $_GET['next'];
+        } elseif (property_exists($SESSION, 'wantsurl')) {
+            $next = $SESSION->wantsurl;
+        } else {
+            $next = $CFG->wwwroot;
+        }
 
         if ($USER->id) {
             header("Location: $next", true, 302);
@@ -106,29 +112,35 @@ class auth_plugin_suap extends auth_oauth2\auth {
 
     function create_or_update_user($userdata){
         global $DB, $USER, $SESSION;
+        $names = explode(' ', $userdata->nome_registro);
+        $firstname = $names[0];
+        $lastname = implode(' ', array_slice($names, 1));
+
         /*
-        "identificacao": user.username,
-        "nome": user.get_full_name(),
-        "primeiro_nome": user.first_name,
-        "ultimo_nome": user.last_name,
-        "email": user.email,
-        "email_secundario": relacionamento.pessoa_fisica.email_secundario,
-        "email_google_classroom": getattr(relacionamento, "email_google_classroom", None),
-        "email_academico": getattr(relacionamento, "email_academico", None),
-        "email_preferencial": data['email'] or data['email_secundario'] or data['email_academico'] or data['email_google_classroom']
-        "campus": campus and str(campus) or None,
-        
-        # allow_scopes == "documentos_pessoais"
-        "cpf": relacionamento.pessoa_fisica.cpf
-        "data_de_nascimento": relacionamento.pessoa_fisica.nascimento_data
-        "sexo": relacionamento.pessoa_fisica.sexo
+        {
+            "identificacao": "123456789",
+            "nome_social": "",
+            "nome_usual": "Nome Outros",
+            "nome_registro": "Nome Outros Nomes Sobrenome",
+            "nome": "Nome Sobrenome",
+            "primeiro_nome": "Nome",
+            "ultimo_nome": "Sobrenome",
+            "email": "nome.sobrenome@ifrn.edu.br",
+            "email_secundario": "nome.sobrenome@gmail.com",
+            "email_google_classroom": "nome.sobrenome@escolar.ifrn.edu.br",
+            "email_academico": "nome.sobrenome@academico.ifrn.edu.br",
+            "campus": "RE",
+            "foto": "/media/fotos/75x100/12asdf349.jpg",
+            "tipo_usuario": "Servidor (Técnico-Administrativo)",
+            "email_preferencial": "nome.sobrenome@ifrn.edu.br"
+        }
         */
         $usuario = $DB->get_record("user", ["username" => $userdata->identificacao]);
         if (!$usuario) {
             $usuario = (object)[
                 'username' => $userdata->identificacao,
-                'firstname' => $userdata->primeiro_nome,
-                'lastname' => $userdata->ultimo_nome,
+                'firstname' => $firstname,
+                'lastname' => $lastname,
                 'email' => $userdata->email_preferencial,
                 'auth' => 'suap',
                 'suspended' => 0,
@@ -151,13 +163,13 @@ class auth_plugin_suap extends auth_oauth2\auth {
             $usuario->id = \user_create_user($usuario);
         }
 
-        $usuario->firstname = $userdata->primeiro_nome;
-        $usuario->lastname = $userdata->ultimo_nome;
+        $usuario->firstname = $firstname;
+        $usuario->lastname = $lastname;
         $usuario->email = $userdata->email_preferencial;
         $usuario->auth = 'suap';
         $usuario->suspended = 0;
         $usuario->profile_field_nome_apresentacao = $userdata->nome;
-        $usuario->profile_field_nome_completo = property_exists($userdata, 'nome_completo') ? $userdata->nome_completo : null;
+        $usuario->profile_field_nome_completo = property_exists($userdata, 'nome_registro') ? $userdata->nome_registro : null;
         $usuario->profile_field_nome_social = property_exists($userdata, 'nome_social') ? $userdata->nome_social : null;
         $usuario->profile_field_email_secundario = property_exists($userdata, 'email_secundario') ? $userdata->email_secundario : null;
         $usuario->profile_field_email_google_classroom = property_exists($userdata, 'email_google_classroom') ? $userdata->email_google_classroom : null;
