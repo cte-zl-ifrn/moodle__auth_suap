@@ -158,7 +158,6 @@ class auth_plugin_suap extends auth_oauth2\auth {
                 'lastnamephonetic' => null,
                 'middlename' => null,
                 'alternatename' => null,
-                // 'picture' => '',
             ];
             $usuario->id = \user_create_user($usuario);
         }
