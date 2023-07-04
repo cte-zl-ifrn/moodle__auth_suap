@@ -111,30 +111,30 @@ class auth_plugin_suap extends auth_oauth2\auth {
     }
 
     function create_or_update_user($userdata){
-        global $DB, $USER, $SESSION;
+        /*
+            {
+                "identificacao": "123456789",
+                "nome_social": "",
+                "nome_usual": "Nome Outros",
+                "nome_registro": "Nome Outros Nomes Sobrenome",
+                "nome": "Nome Sobrenome",
+                "primeiro_nome": "Nome",
+                "ultimo_nome": "Sobrenome",
+                "email": "nome.sobrenome@ifrn.edu.br",
+                "email_secundario": "nome.sobrenome@gmail.com",
+                "email_google_classroom": "nome.sobrenome@escolar.ifrn.edu.br",
+                "email_academico": "nome.sobrenome@academico.ifrn.edu.br",
+                "campus": "RE",
+                "foto": "/media/fotos/75x100/12asdf349.jpg",
+                "tipo_usuario": "Servidor (Técnico-Administrativo)",
+                "email_preferencial": "nome.sobrenome@ifrn.edu.br"
+            }
+        */
+        global $DB, $USER, $SESSION, $CFG;
+
         $names = explode(' ', $userdata->nome_registro);
         $firstname = $names[0];
         $lastname = implode(' ', array_slice($names, 1));
-
-        /*
-        {
-            "identificacao": "123456789",
-            "nome_social": "",
-            "nome_usual": "Nome Outros",
-            "nome_registro": "Nome Outros Nomes Sobrenome",
-            "nome": "Nome Sobrenome",
-            "primeiro_nome": "Nome",
-            "ultimo_nome": "Sobrenome",
-            "email": "nome.sobrenome@ifrn.edu.br",
-            "email_secundario": "nome.sobrenome@gmail.com",
-            "email_google_classroom": "nome.sobrenome@escolar.ifrn.edu.br",
-            "email_academico": "nome.sobrenome@academico.ifrn.edu.br",
-            "campus": "RE",
-            "foto": "/media/fotos/75x100/12asdf349.jpg",
-            "tipo_usuario": "Servidor (Técnico-Administrativo)",
-            "email_preferencial": "nome.sobrenome@ifrn.edu.br"
-        }
-        */
         $usuario = $DB->get_record("user", ["username" => $userdata->identificacao]);
         if (!$usuario) {
             $usuario = (object)[
@@ -175,34 +175,30 @@ class auth_plugin_suap extends auth_oauth2\auth {
         $usuario->profile_field_email_academico = property_exists($userdata, 'email_academico') ? $userdata->email_academico : null;
         $usuario->profile_field_campus_sigla = property_exists($userdata, 'campus') ? $userdata->campus : null;
         $this->usuario = $usuario;
-
-        complete_user_login($usuario);
-
-        if ( property_exists($userdata, 'foto') ) {
-            require_once( $CFG->libdir . '/gdlib.php' );
-            $tmp_file = sys_get_temp_dir() . '/' . basename($userdata->foto);
-            $usericonid = process_new_icon( context_user::instance( $usuario->id, MUST_EXIST ), 'user', 'icon', 0, $tmp_file );
-            if ( $usericonid ) {
-                    $DB->set_field( 'user', 'picture', $usericonid, array( 'id' => $usuario->id ) );
-            }
-
-            $coursecontext = context_system::instance();
-            $usuario->imagefile = $draftitemid;
-            core_user::update_picture(
-                $usuario,
-                [
-                    'maxbytes' => $CFG->maxbytes,
-                    'subdirs' => 0,
-                    'maxfiles' => 1,
-                    'accepted_types' => 'optimised_image'
-                ]
-            );
-        }
-        
-        $this->update_user_record($this->usuario->username);
         $next = $SESSION->next_after_next;
 
+        $this->update_user_record($this->usuario->username);
+        if ( property_exists($userdata, 'foto') ) {
+            $this->update_picture($usuario, $userdata->foto);
+        }
+        $usuario = $DB->get_record("user", ["username" => $userdata->identificacao]);
+        complete_user_login($usuario);
+
         header("Location: $next", true, 302);
+    }
+
+    function update_picture($usuario, $foto) {
+        global $CFG, $DB;
+        require_once( $CFG->libdir . '/gdlib.php' );
+
+        $conf = get_config('auth_suap');
+       
+        $tmp_filename = $CFG->tempdir . '/suapfoto' . $usuario->id;
+        file_put_contents($tmp_filename, file_get_contents("{$conf->base_url}/$foto"));
+        $usuario->imagefile = process_new_icon(context_user::instance($usuario->id, MUST_EXIST), 'user', 'icon', 0, $tmp_filename);
+        if ( $usuario->imagefile ) {
+            $DB->set_field( 'user', 'picture', $usuario->imagefile, ['id' => $usuario->id]);
+        }
     }
 
     function get_userinfo($username) {
