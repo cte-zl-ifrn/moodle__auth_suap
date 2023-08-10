@@ -174,6 +174,7 @@ class auth_plugin_suap extends auth_oauth2\auth {
         $usuario->profile_field_email_google_classroom = property_exists($userdata, 'email_google_classroom') ? $userdata->email_google_classroom : null;
         $usuario->profile_field_email_academico = property_exists($userdata, 'email_academico') ? $userdata->email_academico : null;
         $usuario->profile_field_campus_sigla = property_exists($userdata, 'campus') ? $userdata->campus : null;
+        $usuario->profile_field_last_login = \json_encode($userdata);
         $this->usuario = $usuario;
         $next = $SESSION->next_after_next;
 
