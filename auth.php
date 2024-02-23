@@ -132,7 +132,9 @@ class auth_plugin_suap extends auth_oauth2\auth {
         */
         global $DB, $USER, $SESSION, $CFG;
 
-        $names = explode(' ', $userdata->nome_registro);
+        $nameUser = property_exists($userdata, 'nome_social') ? $userdata->nome_social : $userdata->nome_registro;
+
+        $names = explode(' ', $nameUser);
         $firstname = $names[0];
         $lastname = implode(' ', array_slice($names, 1));
         $usuario = $DB->get_record("user", ["username" => $userdata->identificacao]);
