@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Authentication class for suap is defined here.
  *
@@ -17,9 +18,11 @@ require_once("$CFG->dirroot/auth/suap/classes/Httpful/Bootstrap.php");
 \Httpful\Bootstrap::init();
 
 
-class auth_plugin_suap extends auth_oauth2\auth {
+class auth_plugin_suap extends auth_oauth2\auth
+{
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->authtype = 'suap';
         $this->roleauth = 'auth_suap';
         $this->errorlogtag = '[AUTH SUAP] ';
@@ -27,28 +30,33 @@ class auth_plugin_suap extends auth_oauth2\auth {
         $this->usuario = null;
     }
 
-    public function user_login($username, $password) {
+    public function user_login($username, $password)
+    {
         return false;
     }
 
-    public function can_change_password() {
+    public function can_change_password()
+    {
         return false;
     }
 
-    public function is_internal() {
+    public function is_internal()
+    {
         return false;
     }
 
-    function postlogout_hook($user){
+    function postlogout_hook($user)
+    {
         global $CFG;
-        if($user->auth != 'suap'){
+        if ($user->auth != 'suap') {
             return 0;
         }
         $config = get_config('auth/suap');
-        redirect($CFG->wwwroot.'/auth/suap/logout.php');
+        redirect($CFG->wwwroot . '/auth/suap/logout.php');
     }
 
-    public function login() {
+    public function login()
+    {
         global $CFG, $USER, $SESSION;
 
         if (isset($_GET['next'])) {
@@ -65,10 +73,11 @@ class auth_plugin_suap extends auth_oauth2\auth {
             $SESSION->next_after_next = $next;
             $redirect_uri = "$CFG->wwwroot/auth/suap/authenticate.php";
             header("Location: {$this->config->base_url}/o/authorize/?response_type=code&client_id={$this->config->client_id}&redirect_uri=$redirect_uri", true, 302);
-        }        
+        }
     }
 
-    public function authenticate() {
+    public function authenticate()
+    {
         global $CFG, $USER;
 
         if ($USER->id) {
@@ -77,7 +86,7 @@ class auth_plugin_suap extends auth_oauth2\auth {
         }
 
         $conf = get_config('auth_suap');
-        
+
         if (!isset($_GET['code'])) {
             throw new Exception("O código de autenticação não foi informado.");
         }
@@ -110,7 +119,8 @@ class auth_plugin_suap extends auth_oauth2\auth {
         $this->create_or_update_user($userdata);
     }
 
-    function create_or_update_user($userdata){
+    function create_or_update_user($userdata)
+    {
         /*
             {
                 "identificacao": "123456789",
@@ -132,9 +142,7 @@ class auth_plugin_suap extends auth_oauth2\auth {
         */
         global $DB, $USER, $SESSION, $CFG;
 
-        $nameUser = property_exists($userdata, 'nome_social') ? $userdata->nome_social : $userdata->nome_registro;
-
-        $names = explode(' ', $nameUser);
+        $names = explode(' ', $userdata->nome);
         $firstname = $names[0];
         $lastname = implode(' ', array_slice($names, 1));
         $usuario = $DB->get_record("user", ["username" => $userdata->identificacao]);
@@ -177,11 +185,12 @@ class auth_plugin_suap extends auth_oauth2\auth {
         $usuario->profile_field_email_academico = property_exists($userdata, 'email_academico') ? $userdata->email_academico : null;
         $usuario->profile_field_campus_sigla = property_exists($userdata, 'campus') ? $userdata->campus : null;
         $usuario->profile_field_last_login = \json_encode($userdata);
+        $usuario->profile_field_tipo_usuario = property_exists($userdata, 'tipo_usuario') ? $userdata->tipo_usuario : null;
         $this->usuario = $usuario;
         $next = $SESSION->next_after_next;
 
         $this->update_user_record($this->usuario->username);
-        if ( property_exists($userdata, 'foto') ) {
+        if (property_exists($userdata, 'foto')) {
             $this->update_picture($usuario, $userdata->foto);
         }
         $usuario = $DB->get_record("user", ["username" => $userdata->identificacao]);
@@ -190,22 +199,23 @@ class auth_plugin_suap extends auth_oauth2\auth {
         header("Location: $next", true, 302);
     }
 
-    function update_picture($usuario, $foto) {
+    function update_picture($usuario, $foto)
+    {
         global $CFG, $DB;
-        require_once( $CFG->libdir . '/gdlib.php' );
+        require_once($CFG->libdir . '/gdlib.php');
 
         $conf = get_config('auth_suap');
-       
+
         $tmp_filename = $CFG->tempdir . '/suapfoto' . $usuario->id;
         file_put_contents($tmp_filename, file_get_contents("{$conf->base_url}/$foto"));
         $usuario->imagefile = process_new_icon(context_user::instance($usuario->id, MUST_EXIST), 'user', 'icon', 0, $tmp_filename);
-        if ( $usuario->imagefile ) {
-            $DB->set_field( 'user', 'picture', $usuario->imagefile, ['id' => $usuario->id]);
+        if ($usuario->imagefile) {
+            $DB->set_field('user', 'picture', $usuario->imagefile, ['id' => $usuario->id]);
         }
     }
 
-    function get_userinfo($username) {
+    function get_userinfo($username)
+    {
         return get_object_vars($this->usuario);
     }
-
 }

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Plugin version and other meta-data are defined here.
  *
@@ -10,7 +11,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'auth_suap';
-$plugin->release = '0.2.025';
-$plugin->version = 20230703025;
+$plugin->release = '0.2.026';
+$plugin->version = 20240223026;
 $plugin->maturity = MATURITY_ALPHA;
 $plugin->requires = 2019052000;
