@@ -57,7 +57,7 @@ function authenticate_service_caller() {
 
     $response = json_decode(
         \Httpful\Request::post(
-            "http://login/api/v1/validate/",
+            "http://login/api/v1/verify/",
             json_encode(["token" => $token]),
             \Httpful\Mime::JSON
         )->send()->raw_body
