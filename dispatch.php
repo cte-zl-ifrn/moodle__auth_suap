@@ -6,6 +6,8 @@ define('NO_MOODLE_COOKIES', true);
 
 require_once(__DIR__ . '/../../config.php');
 require_once(__DIR__ . '/../../lib/externallib.php');
+require_once("$CFG->dirroot/auth/suap/classes/Httpful/Bootstrap.php");
+\Httpful\Bootstrap::init();
 
 // Permições de CORS para requisições PREFLIGHT (ionic)
 if ($_SERVER["REQUEST_METHOD"] == "OPTIONS") {
@@ -19,15 +21,15 @@ if ($_SERVER["REQUEST_METHOD"] == "OPTIONS") {
 header('Access-Control-Allow-Origin: *');
 
 function validate_enabled_web_services() {
-    global $DB, $CFG, $SERVICE;
+    global $DB, $CFG;
 
     if (!$CFG->enablewebservices) {
         throw new moodle_exception('enablewsdescription', 'webservice');
     }
 
     // Não pode se o serviço não existir e não estiver habilitado
-    $SERVICE = $DB->get_record('external_services', array('shortname' => $_GET['service'], 'enabled' => 1));
-    if (empty($SERVICE)) {
+    $service = $DB->get_record('external_services', array('shortname' => $_GET['service'], 'enabled' => 1));
+    if (empty($service)) {
         throw new moodle_exception('servicenotavailable', 'webservice');
     }
 
@@ -37,6 +39,8 @@ function validate_enabled_web_services() {
         echo json_encode((object)['appsitecheck' => 'ok']);
         exit;
     }
+
+    return $service;
 }
 
 function authenticate_service_caller() {
@@ -48,24 +52,22 @@ function authenticate_service_caller() {
         throw new \Exception("Bad Request - Authentication not informed", 400);
     }
 
-    // Valida token de autenticação
-    // $sync_up_auth_token = config('auth_token');
-    // if ("Token $sync_up_auth_token" != $headers[$authentication_key]) {
-    //     throw new \Exception("Unauthorized", 401);
-    // }
-    // TODO: Implementar validação do token
+    // Recorta o token do header "Token ..."
+    $token = substr($headers[$authentication_key], 6);
+
+    $response = json_decode(
+        \Httpful\Request::post(
+            "http://login/api/v1/validate/",
+            json_encode(["token" => $token]),
+            \Httpful\Mime::JSON
+        )->send()->raw_body
+    );
+
+    return $response->username;
 }
 
-function authenticate_user() {
+function authenticate_user($username) {
     global $USER, $DB;
-
-    if (isset($_GET['username'])) {
-        $username = $_GET['username'];
-    } else {
-        throw new moodle_exception('missingusername', 'webservice');
-    }
-
-    // echo $OUTPUT->header();
 
     // Verifica se o usuário necessita trocar a senha
     $username = trim(core_text::strtolower($username));
@@ -94,7 +96,7 @@ function authorize_user() {
     }
 
     // Para controlar: autorização
-    $systemcontext = context_system::instance(); 
+    $systemcontext = context_system::instance();
 
     // Não pode em mode de manutenção, exceto administradores
     $hasmaintenanceaccess = has_capability('moodle/site:maintenanceaccess', $systemcontext, $USER);
@@ -111,10 +113,8 @@ function authorize_user() {
     $USER->site_admin = has_capability('moodle/site:config', $systemcontext, $USER->id);
 }
 
-function response_token() {
-    global $SERVICE;
-
-    $token = external_generate_token_for_current_user($SERVICE);
+function response_token($service) {
+    $token = external_generate_token_for_current_user($service);
 
     // prod
     // echo json_encode(
@@ -134,8 +134,8 @@ function response_token() {
     external_log_token_request($token);
 }
 
-validate_enabled_web_services();
-authenticate_service_caller();
-authenticate_user();
+$service = validate_enabled_web_services();
+$username = authenticate_service_caller();
+authenticate_user($username);
 authorize_user();
-response_token();
+response_token($service);
