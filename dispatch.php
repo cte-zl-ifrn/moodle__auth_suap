@@ -117,20 +117,20 @@ function response_token($service) {
     $token = external_generate_token_for_current_user($service);
 
     // prod
-    // echo json_encode(
-    //     [
-    //         "token" => $token->token,
-    //         "privatetoken" => is_https() && !$USER->site_admin ? $token->privatetoken : null,
-    //     ]
-    // );
-
-    // dev
     echo json_encode(
         [
             "token" => $token->token,
-            "privatetoken" => !$USER->site_admin ? $token->privatetoken : null,
+            "privatetoken" => is_https() && !$USER->site_admin ? $token->privatetoken : null,
         ]
     );
+
+    // dev
+    // echo json_encode(
+    //     [
+    //         "token" => $token->token,
+    //         "privatetoken" => !$USER->site_admin ? $token->privatetoken : null,
+    //     ]
+    // );
     external_log_token_request($token);
 }
 
