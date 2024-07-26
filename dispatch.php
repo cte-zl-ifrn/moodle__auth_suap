@@ -1,14 +1,28 @@
 <?php
+
 define('AJAX_SCRIPT', true);
 define('REQUIRE_CORRECT_ACCESS', true);
 define('NO_MOODLE_COOKIES', true);
 
 require_once(__DIR__ . '/../../config.php');
+require_once(__DIR__ . '/../../lib/externallib.php');
+require_once("$CFG->dirroot/auth/suap/classes/Httpful/Bootstrap.php");
+\Httpful\Bootstrap::init();
+
+// Permições de CORS para requisições PREFLIGHT (ionic)
+if ($_SERVER["REQUEST_METHOD"] == "OPTIONS") {
+    header("Access-Control-Allow-Origin: *");
+    header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+    header("Access-Control-Allow-Headers: Content-Type, Authentication");
+    exit;
+}
 
 // Allow CORS requests.
 header('Access-Control-Allow-Origin: *');
 
 function validate_enabled_web_services() {
+    global $DB, $CFG;
+
     if (!$CFG->enablewebservices) {
         throw new moodle_exception('enablewsdescription', 'webservice');
     }
@@ -25,28 +39,35 @@ function validate_enabled_web_services() {
         echo json_encode((object)['appsitecheck' => 'ok']);
         exit;
     }
+
+    return $service;
 }
 
 function authenticate_service_caller() {
     $headers = getallheaders();
+
+    // Verifica se o token de autenticação está no header
     $authentication_key = array_key_exists('Authentication', $headers) ? "Authentication": "authentication";
     if (!array_key_exists($authentication_key, $headers)) {
         throw new \Exception("Bad Request - Authentication not informed", 400);
     }
 
-    // Verifica se o token de autenticação está no header
-    $sync_up_auth_token = config('auth_token');
-    if ("Token $sync_up_auth_token" != $headers[$authentication_key]) {
-        throw new \Exception("Unauthorized", 401);
-    }
+    // Recorta o token do header "Token ..."
+    $token = substr($headers[$authentication_key], 6);
 
+    $response = json_decode(
+        \Httpful\Request::post(
+            "http://login/api/v1/verify/",
+            json_encode(["token" => $token]),
+            \Httpful\Mime::JSON
+        )->send()->raw_body
+    );
+
+    return $response->username;
 }
 
-function authenticate_user() {
-    global $USER;
-    $username = $_GET['username']
-
-    // echo $OUTPUT->header();
+function authenticate_user($username) {
+    global $USER, $DB;
 
     // Verifica se o usuário necessita trocar a senha
     $username = trim(core_text::strtolower($username));
@@ -75,7 +96,7 @@ function authorize_user() {
     }
 
     // Para controlar: autorização
-    $systemcontext = context_system::instance(); 
+    $systemcontext = context_system::instance();
 
     // Não pode em mode de manutenção, exceto administradores
     $hasmaintenanceaccess = has_capability('moodle/site:maintenanceaccess', $systemcontext, $USER);
@@ -84,28 +105,37 @@ function authorize_user() {
     }
 
     // let enrol plugins deal with new enrolments if necessary
-    enrol_check_plugins($user);
+    enrol_check_plugins($USER);
 
     // setup user session to check capability
-    \core\session\manager::set_user($user);
+    \core\session\manager::set_user($USER);
 
     $USER->site_admin = has_capability('moodle/site:config', $systemcontext, $USER->id);
 }
 
-function response_token() {
-    // Get an existing token or create a new one.
-    $token = \core_external\util::generate_token_for_current_user($service);
+function response_token($service) {
+    $token = external_generate_token_for_current_user($service);
+
+    // prod
     echo json_encode(
         [
             "token" => $token->token,
             "privatetoken" => is_https() && !$USER->site_admin ? $token->privatetoken : null,
         ]
     );
-    \core_external\util::log_token_request($token);
+
+    // dev
+    // echo json_encode(
+    //     [
+    //         "token" => $token->token,
+    //         "privatetoken" => !$USER->site_admin ? $token->privatetoken : null,
+    //     ]
+    // );
+    external_log_token_request($token);
 }
 
-validate_enabled_web_services();
-authenticate_service_caller();
-authenticate_user();
+$service = validate_enabled_web_services();
+$username = authenticate_service_caller();
+authenticate_user($username);
 authorize_user();
-response_token();
+response_token($service);
