@@ -23,6 +23,7 @@ if ($ADMIN->fulltree) {
     create_setting_configtext($settings, "base_url", "https://suap.ifrn.edu.br");
     create_setting_configtext($settings, "client_id", "veja no SUAP");
     create_setting_configtext($settings, "client_secret", "veja no SUAP");
+    create_setting_configtext($settings, "verify_token_url", "https://teste.login.ead.ifrn.edu.br/api/v1/verify/");
 
     $authplugin = get_auth_plugin('suap');
     display_auth_lock_options($settings, $authplugin->authtype, $authplugin->userfields, get_string('auth_fieldlocks_help', 'auth'), true, true, $authplugin->get_custom_user_profile_fields());

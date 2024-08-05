@@ -44,6 +44,7 @@ function validate_enabled_web_services() {
 }
 
 function authenticate_service_caller() {
+    $config = get_config('auth_suap');
     $headers = getallheaders();
 
     // Verifica se o token de autenticação está no header
@@ -57,7 +58,7 @@ function authenticate_service_caller() {
 
     $response = json_decode(
         \Httpful\Request::post(
-            "http://login/api/v1/verify/",
+            $config->verify_token_url,
             json_encode(["token" => $token]),
             \Httpful\Mime::JSON
         )->send()->raw_body
