@@ -1,0 +1,17 @@
+stages:
+  - deploy
+
+
+deploy-job:
+  stage: deploy
+  only:
+    - producao
+    - teste
+  script:
+    - echo "Deploying application..."
+    - mkdir -p ~/.ssh
+    - echo "$GITHUB_SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+    - chmod 700 ~/.ssh/id_rsa
+    - git remote add github git@github.com:cte-zl-ifrn/moodle__auth_suap.git
+    - git push github
+    - echo "Application successfully deployed."
