@@ -14,5 +14,6 @@ deploy-job:
     - chmod 700 ~/.ssh/id_rsa
     - git remote remove github
     - git remote add github git@github.com:cte-zl-ifrn/moodle__auth_suap.git
+    - git fetch github
     - git push github $CI_COMMIT_REF_NAME
     - echo "Application successfully deployed."
