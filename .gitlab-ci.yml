@@ -13,5 +13,5 @@ stages:
   - push
   - deploy
 
-# sast:
-#   stage: sast
+sast:
+  stage: sast
