@@ -5,6 +5,7 @@ include:
     file:
       - "templates/lms-autodeploy.yml"
 
+
 stages:
   - sast
   - build
