@@ -1,3 +1,6 @@
+variables:
+  GITLAB_ADVANCED_SAST_ENABLED: 'true'
+  
 include:
   - template: "Security/SAST.gitlab-ci.yml"
   - project: "dead-zl/infra/ci-cd-templates"
