@@ -9,10 +9,10 @@ include:
       - "templates/lms-autodeploy.yml"
 
 stages:
-  # - sast
-  # - build
-  # - test
-  # - push
+  - sast
+  - build
+  - test
+  - push
   - deploy
 
 # sast:
