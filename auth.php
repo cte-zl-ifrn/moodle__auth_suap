@@ -20,6 +20,11 @@ require_once("$CFG->dirroot/auth/suap/classes/Httpful/Bootstrap.php");
 
 class auth_plugin_suap extends auth_oauth2\auth
 {
+    private $authtype;
+    private $roleauth;
+    private $errorlogtag;
+    private $config;
+    private $usuario;
 
     public function __construct()
     {
@@ -207,7 +212,7 @@ class auth_plugin_suap extends auth_oauth2\auth
         $conf = get_config('auth_suap');
 
         $tmp_filename = $CFG->tempdir . '/suapfoto' . $usuario->id;
-        file_put_contents($tmp_filename, file_get_contents("{$conf->base_url}/$foto"));
+        file_put_contents($tmp_filename, file_get_contents($foto));
         $usuario->imagefile = process_new_icon(context_user::instance($usuario->id, MUST_EXIST), 'user', 'icon', 0, $tmp_filename);
         if ($usuario->imagefile) {
             $DB->set_field('user', 'picture', $usuario->imagefile, ['id' => $usuario->id]);
