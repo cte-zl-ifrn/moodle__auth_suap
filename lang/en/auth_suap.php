@@ -37,3 +37,6 @@ $string['client_id_desc'] = "Remember to first register this Moodle in your list
 
 $string['client_secret'] = 'Client secret';
 $string['client_secret_desc'] = "Remember, if you do not immediately save 'Client Secret' when editing it will no longer be available, i.e. you will need to register new service.";
+
+$string['verify_token_url'] = "Verify token URL";
+$string['verify_token_url_desc'] = "Verify token URL";
