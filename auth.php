@@ -20,11 +20,11 @@ require_once("$CFG->dirroot/auth/suap/classes/Httpful/Bootstrap.php");
 
 class auth_plugin_suap extends auth_oauth2\auth
 {
-    private $authtype;
-    private $roleauth;
-    private $errorlogtag;
-    private $config;
-    private $usuario;
+    public $authtype;
+    public $roleauth;
+    public $errorlogtag;
+    public $config;
+    public $usuario;
 
     public function __construct()
     {
