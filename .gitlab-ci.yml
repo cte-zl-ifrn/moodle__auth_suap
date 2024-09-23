@@ -1,19 +1,6 @@
-stages:
-  - deploy
-
-
-deploy-job:
-  stage: deploy
-  only:
-    - producao
-    - teste
-  script:
-    - echo "Deploying application..."
-    - mkdir -p ~/.ssh
-    - echo "$GITHUB_SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
-    - chmod 700 ~/.ssh/id_rsa
-    - echo `git remote remove github`
-    - git remote add github git@github.com:cte-zl-ifrn/moodle__auth_suap.git
-    - git fetch github
-    - git push github $CI_COMMIT_REF_NAME
-    - echo "Application successfully deployed."
+include:
+  - template: "Security/SAST.gitlab-ci.yml"
+  - project: "dead-zl/ava/lms/ci-cd-templates"
+    ref: "main"
+    file:
+      - "templates/lms-autodeploy.yml"

@@ -20,6 +20,11 @@ require_once("$CFG->dirroot/auth/suap/classes/Httpful/Bootstrap.php");
 
 class auth_plugin_suap extends auth_oauth2\auth
 {
+    public $authtype;
+    public $roleauth;
+    public $errorlogtag;
+    public $config;
+    public $usuario;
 
     public function __construct()
     {
@@ -135,10 +140,12 @@ class auth_plugin_suap extends auth_oauth2\auth
                 "email_google_classroom": "nome.sobrenome@escolar.ifrn.edu.br",
                 "email_academico": "nome.sobrenome@academico.ifrn.edu.br",
                 "campus": "RE",
-                "foto": "/media/fotos/75x100/12asdf349.jpg",
+                "foto":"https://cdn.suap.ifrn.edu.br/media/fotos/75x100/159574.4t54kAqLqyPB.jpg?X-Amz-Algorithm=...&X-Amz-Credential=...&X-Amz-Date=...&X-Amz-Expires=...&X-Amz-SignedHeaders=...&X-Amz-Signature=...",
                 "tipo_usuario": "Servidor (Técnico-Administrativo)",
                 "email_preferencial": "nome.sobrenome@ifrn.edu.br"
             }
+
+            // Antes a foto era relativa ao baseurl do SUAP, agora é absoluta e temporária
         */
         global $DB, $USER, $SESSION, $CFG;
 
@@ -207,7 +214,7 @@ class auth_plugin_suap extends auth_oauth2\auth
         $conf = get_config('auth_suap');
 
         $tmp_filename = $CFG->tempdir . '/suapfoto' . $usuario->id;
-        file_put_contents($tmp_filename, file_get_contents("{$conf->base_url}/$foto"));
+        file_put_contents($tmp_filename, file_get_contents($foto));
         $usuario->imagefile = process_new_icon(context_user::instance($usuario->id, MUST_EXIST), 'user', 'icon', 0, $tmp_filename);
         if ($usuario->imagefile) {
             $DB->set_field('user', 'picture', $usuario->imagefile, ['id' => $usuario->id]);

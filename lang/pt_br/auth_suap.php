@@ -37,3 +37,6 @@ $string['client_id_desc'] = "Lembre-se de primeiro cadastrar este Moodle na sua 
 
 $string['client_secret'] = 'Secredo do cliente';
 $string['client_secret_desc'] = "Lembre-se, se você não salvar logo 'Secredo do cliente' ao editar ele não estará mais disponível, ou seja, será necessário cadastrar novo serviço.";
+
+$string['verify_token_url'] = "Verify token URL";
+$string['verify_token_url_desc'] = "Verify token URL";
