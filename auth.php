@@ -111,17 +111,17 @@ class auth_plugin_suap extends auth_oauth2\auth
                 )->send()->raw_body
             );
 
-            $userdata = json_decode(
-                \Httpful\Request::get("$conf->base_url/api/eu/?scope=" . urlencode('identificacao documentos_pessoais'))
+            $response = \Httpful\Request::get("$conf->base_url/api/v1/userinfo/?scope=" . urlencode('read'))
                     ->addHeaders(["Authorization" => "Bearer {$auth->access_token}", 'x-api-key' => $conf->client_secret, 'Accept' => 'application/json'])
-                    ->send()->raw_body
-            );
+                    ->send()->raw_body;
+            $userdata = json_decode($response);
+            $this->create_or_update_user($userdata);
         } catch (Exception $e) {
             echo "<p>Erro ao tentar integrar com o SUAP. Aguarde alguns minutos e <a href='{$CFG->wwwroot}/auth/suap/login.php'>tente novamente</a>.";
             die();
         }
-
-        $this->create_or_update_user($userdata);
+        echo "<p>Erro ao tentar integrar com o SUAP. Não foi possível obter seus dados da API.</a>.";
+        die();
     }
 
     function create_or_update_user($userdata)
@@ -148,16 +148,13 @@ class auth_plugin_suap extends auth_oauth2\auth
             // Antes a foto era relativa ao baseurl do SUAP, agora é absoluta e temporária
         */
         global $DB, $USER, $SESSION, $CFG;
-
-        $names = explode(' ', $userdata->nome);
-        $firstname = $names[0];
-        $lastname = implode(' ', array_slice($names, 1));
+        
         $usuario = $DB->get_record("user", ["username" => $userdata->identificacao]);
         if (!$usuario) {
             $usuario = (object)[
                 'username' => $userdata->identificacao,
-                'firstname' => $firstname,
-                'lastname' => $lastname,
+                'firstname' => $userdata->primeiro_nome,
+                'lastname' => $userdata->ultimo_nome,
                 'email' => $userdata->email_preferencial,
                 'auth' => 'suap',
                 'suspended' => 0,
@@ -179,12 +176,12 @@ class auth_plugin_suap extends auth_oauth2\auth
             $usuario->id = \user_create_user($usuario);
         }
 
-        $usuario->firstname = $firstname;
-        $usuario->lastname = $lastname;
+        $usuario->firstname = $userdata->primeiro_nome;
+        $usuario->lastname = $userdata->ultimo_nome;
         $usuario->email = $userdata->email_preferencial;
         $usuario->auth = 'suap';
         $usuario->suspended = 0;
-        $usuario->profile_field_nome_apresentacao = $userdata->nome;
+        $usuario->profile_field_nome_apresentacao = $userdata->nome_usuaal;
         $usuario->profile_field_nome_completo = property_exists($userdata, 'nome_registro') ? $userdata->nome_registro : null;
         $usuario->profile_field_nome_social = property_exists($userdata, 'nome_social') ? $userdata->nome_social : null;
         $usuario->profile_field_email_secundario = property_exists($userdata, 'email_secundario') ? $userdata->email_secundario : null;
