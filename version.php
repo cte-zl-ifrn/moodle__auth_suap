@@ -25,7 +25,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'auth_suap';
-$plugin->release = '4.5.080';
-$plugin->version = 2026_08_29_080;
+$plugin->release = '4.5.081';
+$plugin->version = 2026_09_08_081;
 $plugin->maturity = MATURITY_STABLE;
 $plugin->requires = 2024100700;

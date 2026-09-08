@@ -125,8 +125,10 @@ Ver :doc:`sincronizacao-usuario` para a tabela completa de campos. Em resumo,
 Passo 5 — conclusão do login
 -------------------------------
 
-``complete_user_login($usuario)`` autentica a sessão Moodle. O usuário é então redirecionado
-para ``$SESSION->next_after_next`` (definido no passo 1) ou para a raiz do site.
+``complete_user_login($usuario)`` autentica a sessão Moodle. Em seguida,
+``resolve_next_after_login()`` recupera e limpa ``$SESSION->next_after_next`` (definido no
+passo 1) para determinar o destino do redirecionamento, com fallback para a raiz do site caso
+nada tenha sido salvo.
 
 Logout
 ------

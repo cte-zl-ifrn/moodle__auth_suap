@@ -324,15 +324,28 @@ class auth_plugin_suap extends auth_oauth2\auth {
             $usuario = $this->create_or_update_user($userdata);
 
             complete_user_login($usuario);
-            $next = !empty($SESSION->next_after_next) ? $SESSION->next_after_next : $CFG->wwwroot;
-            unset($SESSION->next_after_next);
-            auth_suap_redirect($next);
+            auth_suap_redirect($this->resolve_next_after_login());
         } catch (\Throwable $e) {
             // Log error for administrators.
             debugging('[AUTH SUAP] OAuth2 Authentication Error: ' . $e->getMessage(), DEBUG_DEVELOPER);
 
             echo $e->getMessage();
         }
+    }
+
+    /**
+     * Resolve a URL para onde o usuário deve ser enviado após o login via SUAP, restaurando o
+     * destino original (armazenado por login() em $SESSION->next_after_next antes do redirect
+     * para o SUAP), com fallback para a home do site.
+     *
+     * @return string
+     */
+    protected function resolve_next_after_login() {
+        global $CFG, $SESSION;
+
+        $next = !empty($SESSION->next_after_next) ? $SESSION->next_after_next : $CFG->wwwroot;
+        unset($SESSION->next_after_next);
+        return $next;
     }
 
     /**
