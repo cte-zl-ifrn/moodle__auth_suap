@@ -125,8 +125,9 @@ See :doc:`sincronizacao-usuario` for the complete field table. In summary,
 Step 5 — completing the login
 --------------------------------
 
-``complete_user_login($usuario)`` authenticates the Moodle session. The user is then
-redirected to ``$SESSION->next_after_next`` (set in step 1) or to the site root.
+``complete_user_login($usuario)`` authenticates the Moodle session. Then,
+``resolve_next_after_login()`` reads and clears ``$SESSION->next_after_next`` (set in step 1)
+to determine the redirect target, falling back to the site root if nothing was saved.
 
 Logout
 ------
